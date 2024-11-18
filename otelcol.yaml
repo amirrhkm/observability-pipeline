@@ -1,49 +1,9 @@
 receivers:
-  hostmetrics:
-    collection_interval: 10s
-    scrapers:
-      load:
-        metrics:
-          system.cpu.load_average.15m:
-            enabled: false
-          system.cpu.load_average.5m:
-            enabled: false
-          system.cpu.load_average.1m:
-            enabled: true
-      memory:
-        metrics:
-          system.memory.usage:
-            enabled: true
-          system.linux.memory.available:
-            enabled: false
-          system.memory.limit:
-            enabled: true
-          system.memory.utilization:
-            enabled: true
-      filesystem:
-        metrics:
-          system.filesystem.inodes.usage:
-            enabled: false
-          system.filesystem.usage:
-            enabled: true
-          system.filesystem.utilization:
-            enabled: true
-      network:
-        metrics:
-          system.network.connections:
-            enabled: true
-          system.network.dropped:
-            enabled: true
-          system.network.errors:
-            enabled: true
-          system.network.io:
-            enabled: true
-          system.network.packets:
-            enabled: true
-          system.network.conntrack.count:
-            enabled: false
-          system.network.conntrack.max:
-            enabled: false
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
 
 processors:
   batch:
@@ -51,12 +11,18 @@ processors:
     send_batch_size: 1024
 
 exporters:
+  debug:
+    verbosity: detailed
   prometheus:
     endpoint: "0.0.0.0:8889"
+  otlp/data-prepper:
+    endpoint: "0.0.0.0:21892"
+    tls:
+      insecure: true
 
 service:
   pipelines:
     metrics:
-      receivers: [hostmetrics]
+      receivers: [otlp]
       processors: [batch]
-      exporters: [prometheus] 
+      exporters: [debug, prometheus] 
