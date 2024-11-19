@@ -11,7 +11,7 @@ otel-metrics-pipeline:
     - otel_metrics_raw_processor:
   sink:
     - opensearch:
-        hosts: ["0.0.0.0:9200"]
+        hosts: ["http://opensearch:9200"]
         index: metrics_index
         username: admin
         password: admin
