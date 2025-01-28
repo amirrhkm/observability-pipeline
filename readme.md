@@ -25,3 +25,7 @@ make down
     - index: otlp-logs
 - `prometheus.yaml`: Prometheus configuration
 
+## Architecture
+
+<img width="915" alt="Image" src="https://github.com/user-attachments/assets/895bf692-091c-4726-9c8d-4098d83aac29" />
+
