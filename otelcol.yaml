@@ -1,4 +1,21 @@
 receivers:
+  filelog:
+    include:
+      - /var/log/hub-monitoring.log
+    start_at: beginning
+    multiline:
+      line_start_pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:00\s'
+    operators:
+      - type: regex_parser
+        regex: '^(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2})\s+(?P<level>\w+)\s+\[(?P<source>[^\]]+)\]\s+(?P<message>(?:.|[\r\n])*)'
+        timestamp:
+          parse_from: attributes.timestamp
+          layout_type: gotime
+          layout: '2006-01-02T15:04:05-07:00'
+        severity:
+          parse_from: attributes.level
+    include_file_name: true
+    include_file_path: true
   hostmetrics:
     root_path: /hostfs
     collection_interval: 10s
@@ -50,7 +67,6 @@ receivers:
       grpc:
         endpoint: 0.0.0.0:4317
 
-
 processors:
   resourcedetection:
     detectors:
@@ -85,41 +101,6 @@ processors:
           enabled: true
         os.type:
           enabled: true
-  metricstransform:
-    transforms:
-      - include: system.cpu.load_average.1m
-        action: update
-        new_name: infrastructure.cpu.load
-      - include: system.memory.usage
-        action: update
-        new_name: infrastructure.memory.usage
-      - include: system.memory.limit
-        action: update
-        new_name: infrastructure.memory.limit
-      - include: system.memory.utilization
-        action: update
-        new_name: infrastructure.memory.utilization
-      - include: system.filesystem.usage
-        action: update
-        new_name: infrastructure.disk.usage
-      - include: system.filesystem.utilization
-        action: update
-        new_name: infrastructure.disk.utilization
-      - include: system.network.connections
-        action: update
-        new_name: infrastructure.network.connections
-      - include: system.network.dropped
-        action: update
-        new_name: infrastructure.network.dropped
-      - include: system.network.errors
-        action: update
-        new_name: infrastructure.network.errors
-      - include: system.network.io
-        action: update
-        new_name: infrastructure.network.io
-      - include: system.network.packets
-        action: update
-        new_name: infrastructure.network.packets
   batch:
     send_batch_size: 512
     send_batch_max_size: 1024
@@ -129,8 +110,12 @@ exporters:
     verbosity: detailed
   prometheus:
     endpoint: 0.0.0.0:8889
-  otlp/data-prepper:
-    endpoint: 0.0.0.0:21892
+  otlp/data-prepper-metrics:
+    endpoint: op-data-prepper:21891
+    tls:
+      insecure: true
+  otlp/data-prepper-logs:
+    endpoint: op-data-prepper:21892
     tls:
       insecure: true
 
@@ -142,9 +127,16 @@ service:
         - hostmetrics
       processors:
         - resourcedetection
-        - metricstransform
         - batch
       exporters:
         - debug
         - prometheus
-        - otlp/data-prepper
+        - otlp/data-prepper-metrics
+    logs:
+      receivers:
+        - filelog
+      processors:
+        - batch
+      exporters:
+        - debug
+        - otlp/data-prepper-logs
