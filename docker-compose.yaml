@@ -2,77 +2,94 @@ version: "2"
 
 services:
   otel-collector:
-    container_name: otel-collector
+    container_name: op-otel-collector
     image: otel/opentelemetry-collector-contrib:latest
     command: ["--config=/etc/otelcol.yaml"]
     volumes:
       - ./otelcol.yaml:/etc/otelcol.yaml
+      - ./hub-monitoring.log:/var/log/hub-monitoring.log
       - /:/hostfs
+    depends_on:
+      - data-prepper
     privileged: true
     ports:
       - "8889:8889"
       - "4317:4317"
       - "4318:4318"
+    networks:
+      - observability
       
   prometheus:
-    container_name: prometheus
+    container_name: op-prometheus
     image: quay.io/prometheus/prometheus:v2.34.0
     command: --config.file=/etc/prometheus.yaml --no-scrape.adjust-timestamps
     volumes:
       - ./prometheus.yaml:/etc/prometheus.yaml
+    depends_on:
+      - otel-collector
     ports:
       - "9090:9090"
+    networks:
+      - observability 
 
   data-prepper:
     image: opensearchproject/data-prepper:latest
-    container_name: data-prepper
+    container_name: op-data-prepper
     volumes:
       - ./dataprepper.yaml:/usr/share/data-prepper/pipelines/pipelines.yaml
     depends_on:
       - opensearch
-      - opensearch-dashboard
-      - otel-collector
+      - opensearch-dashboards
     ports:
       - 21890:21890
       - 21891:21891
       - 21892:21892
       - 4900:4900
+    networks:
+      - observability
 
   opensearch:
     image: opensearchproject/opensearch:latest
-    container_name: opensearch
+    container_name: op-opensearch
     environment:
-      - cluster.name=opensearch-cluster
-      - node.name=opensearch
-      - discovery.seed_hosts=opensearch
+      - cluster.name=opensearch-cluster 
+      - node.name=opensearch 
+      - discovery.seed_hosts=opensearch 
       - cluster.initial_cluster_manager_nodes=opensearch
-      - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true 
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" 
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
-      - "DISABLE_SECURITY_PLUGIN=true"
+      - "DISABLE_SECURITY_PLUGIN=true" 
     ulimits:
       memlock:
-        soft: -1
+        soft: -1 
         hard: -1
       nofile:
-        soft: 65536
+        soft: 65536 
         hard: 65536
     volumes:
-      - opensearch-data:/usr/share/opensearch/data
+      - opensearch-data:/usr/share/opensearch/data 
     ports:
       - 9200:9200
-      - 9600:9600
+      - 9600:9600 
+    networks:
+      - observability
 
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:latest
-    container_name: opensearch-dashboard
+    container_name: op-opensearch-dashboards
     ports:
       - 5601:5601
     expose:
-      - "5601"
+      - "5601" 
     environment:
       - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
-      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true" 
+    networks:
+      - observability
 
 volumes:
   opensearch-data:
+
+networks:
+  observability:
