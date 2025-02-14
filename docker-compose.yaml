@@ -7,7 +7,9 @@ services:
     command: ["--config=/etc/otelcol.yaml"]
     volumes:
       - ./otelcol.yaml:/etc/otelcol.yaml
-      - ./hub-monitoring.log:/var/log/hub-monitoring.log
+      - ${LOGS_PATH}/hub-gw-info.log:/var/log/hub-gw-info.log
+      - ${LOGS_PATH}/hub-worker.log:/var/log/hub-worker.log
+      - ${LOGS_PATH}/hub-gw-debug.log:/var/log/hub-gw-debug.log
       - /:/hostfs
     depends_on:
       - data-prepper
