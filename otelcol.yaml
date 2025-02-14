@@ -1,8 +1,10 @@
 receivers:
   filelog:
     include:
-      - /var/log/hub-monitoring.log
-    start_at: beginning
+      - /var/log/hub-gw-info.log
+      - /var/log/hub-gw-debug.log
+      - /var/log/hub-worker.log
+    start_at: end
     multiline:
       line_start_pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:00\s'
     operators:
