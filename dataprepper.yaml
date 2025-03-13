@@ -59,7 +59,7 @@ otel-logs-pipeline:
     - grok:
         match:
           body:
-            - "%{TIMESTAMP_ISO8601:log_timestamp} %{LOGLEVEL:level} \\[%{DATA:source}\\] %{GREEDYDATA:message}"
+            - "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:level} \\[%{DATA:source}\\](?:\\s+\\[(?:%{NUMBER:pid}|-)\\])?\\s+%{GREEDYDATA:message}"  
   sink:
     - opensearch:
         hosts: ["http://opensearch:9200"]
