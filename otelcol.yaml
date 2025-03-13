@@ -1,4 +1,22 @@
 receivers:
+  syslog:
+    tcp:
+      listen_address: "0.0.0.0:514"
+      add_attributes: true
+      encoding: "utf-8"
+    protocol: "rfc3164"
+    location: "UTC"
+    allow_skip_pri_header: true
+    enable_octet_counting: false
+    operators:
+      - type: regex_parser
+        regex: '^(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}:\d{2})\s+(?P<level>\w+)\s+\[(?P<program>[^]\[]+)\](?:\s+\[(?P<pid>-|\d+)\])?\s+(?P<message>.+)'
+        timestamp:
+          parse_from: attributes.timestamp
+          layout: '%Y-%m-%dT%H:%M:%S.%f%z'
+          location: 'UTC'
+        severity:
+          parse_from: attributes.level
   filelog:
     include:
       - /var/log/hub-gw-info.log
